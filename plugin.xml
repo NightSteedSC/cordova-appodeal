@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<plugin id="cordova-appodeal" version="1.0.0"
+xmlns="http://apache.org/cordova/ns/plugins/1.0" 
+xmlns:android="http://schemas.android.com/apk/res/android">
+	<name>CordovaAppodeal</name>
+	<js-module name="cordovaAppodeal" src="www/cordovaAppodeal.js">
+		<clobbers target="cordova.plugins.cordovaAppodeal" />
+	</js-module>
+	<hook src="hooks/updateConfig.js" type="before_build" />
+	<platform name="android">
+		<config-file parent="/*" target="res/xml/config.xml">
+			<feature name="cordovaAppodeal">
+				<param name="android-package" value="org.apache.cordova.cordovaAppodeal.cordovaAppodeal" />
+			</feature>
+		</config-file>
+		 <config-file target="AndroidManifest.xml" parent="application">
+<!--			 <meta-data android:name="com.google.android.gms.games.APP_ID" android:value="@string/google_game_services_app_id" />-->
+<!--			 <meta-data android:name="com.google.android.gms.version" android:value="@integer/google_play_services_version"/>-->
+        </config-file>
+		
+		<config-file parent="/*" target="AndroidManifest.xml"></config-file>
+		<source-file src="src/android/cordovaAppodeal.java" target-dir="src/org/apache/cordova/cordovaAppodeal" />
+
+<!--		<framework src="com.google.android.gms:play-services-auth:19.0.0" />-->
+<!--        <framework src="com.google.android.gms:play-services-games:21.0.0" />-->
+<!--		<framework src="com.google.android.gms:play-services-base:17.5.0" />-->
+<!--		<framework src="com.android.billingclient:billing:4.0.0" />-->
+<!--		<framework src="org.jetbrains:annotations:15.0" />-->
+<!--		<framework src="com.google.api-client:google-api-client:1.23.0" />-->
+<!--		<framework src="com.google.oauth-client:google-oauth-client-jetty:1.23.0" />-->
+<!--		<framework src="com.google.apis:google-api-services-people:v1-rev277-1.23.0" />-->
+
+
+	</platform>
+</plugin>

@@ -1,0 +1,19 @@
+{
+  "name": "cordova-appodeal",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NightSteedSC/cordova-appodeal.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/NightSteedSC/cordova-appodeal/issues"
+  },
+  "homepage": "https://github.com/NightSteedSC/cordova-appodeal#readme"
+}
