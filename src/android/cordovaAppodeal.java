@@ -3,222 +3,111 @@ package org.apache.cordova.cordovaAppodeal;
 import android.content.Intent;
 import android.os.StrictMode;
 import android.util.Log;
-import androidx.annotation.NonNull;
+import android.widget.Switch;
+import androidx.annotation.Nullable;
 
-import org.apache.http.client.methods.HttpPost;
 import org.json.JSONArray;
 import org.json.JSONException;
-
 import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaWebView;
 
-import com.android.billingclient.api.Purchase;
-import com.google.android.gms.auth.api.Auth;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.auth.api.signin.GoogleSignInResult;
-//import com.google.android.gms.auth.api.credentials.
-import com.google.android.gms.common.api.Scope;
-import com.google.android.gms.games.AchievementsClient;
-import com.google.android.gms.games.EventsClient;
-import com.google.android.gms.games.Games;
-import com.google.android.gms.games.LeaderboardsClient;
-import com.google.android.gms.games.PlayersClient;
-import com.google.android.gms.games.GamesClient;
-//import com.google.android.gms.plus.Plus;
-import com.google.android.gms.tasks.OnSuccessListener;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
-
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeTokenRequest;
-import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse;
-import com.google.api.client.http.GenericUrl;
-//import com.google.api.client.json.gson.gsonfactory;
-//import com.google.api.client.googleapis
-import com.google.api.client.http.HttpContent;
-import com.google.api.client.http.HttpRequest;
-import com.google.api.client.http.HttpRequestFactory;
-import com.google.api.client.http.HttpTransport;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.http.json.JsonHttpContent;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.services.people.v1.PeopleService;
-import com.google.api.services.people.v1.PeopleServiceScopes;
-import com.google.api.services.people.v1.model.Birthday;
-import com.google.api.services.people.v1.model.Date;
-import com.google.api.services.people.v1.model.Person;
+import com.appodeal.ads.Appodeal;
+import com.appodeal.ads.Native;
+import com.appodeal.ads.NativeAd;
+import com.appodeal.ads.NativeAdView;
+import com.appodeal.ads.UserSettings;
+import com.explorestack.consent.Consent;
+import com.explorestack.consent.ConsentForm;
+import com.explorestack.consent.ConsentFormListener;
+import com.explorestack.consent.ConsentInfoUpdateListener;
+import com.explorestack.consent.ConsentManager;
+import com.explorestack.consent.exception.ConsentManagerException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 ////////////////////////////////////////////////////
 public class cordovaAppodeal extends CordovaPlugin  {
 
     private static final String TAG = "SignInActivity";
-    private static final int RC_SIGN_IN = 9001;
-    private static final int RC_ACHIEVEMENT_UI = 9003;
+    private static String APP_KEY = "a9d23e2e749eb878c8d4f530e9b5d2c2c650835536c1651c";
 
-    private AchievementsClient mAchievementsClient;
-    private LeaderboardsClient mLeaderboardsClient;
-    private EventsClient mEventsClient;
-    private PlayersClient mPlayersClient;
-    private static final int RC_UNUSED = 5001;
-    private String mDisplayName = "";
-    private String serverAuthCode = "";
+    private static final String CONSENT = "consent";
 
-    private PeopleService peopleService;
-    private GoogleSignInClient googleSignInClient;
-    private GoogleSignInAccount googleSignInAccount;
-    private GoogleSignInOptions googleSignInOptions;
-    private GamesClient gamesClient;
-    private static final String APPLICATION_NAME = "Google People API Java Quickstart";
-    private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
-    private static String GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID = "";
-    private static String GOOGLE_GAMES_SERVICES_WEB_CLIENT_SECRET = "";
+    private List<NativeAd> nativeAds = new ArrayList<>();
+    String placementName = "default";
+    boolean consent;
+    private Switch consentSwitch;
+    @Nullable
+    private ConsentForm consentForm;
 
     /////////////////////////////////////////////////////////////////////////////
     @Override
     public void initialize(CordovaInterface cordova, CordovaWebView webView){
         super.initialize(cordova, webView);
         Log.w(TAG, "*** MAIN initialize 0");
-        GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID = cordova.getActivity().getString(cordova.getActivity().getResources().getIdentifier( "GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID", "string", cordova.getActivity().getPackageName()));
-        GOOGLE_GAMES_SERVICES_WEB_CLIENT_SECRET = cordova.getActivity().getString(cordova.getActivity().getResources().getIdentifier( "GOOGLE_GAMES_SERVICES_WEB_CLIENT_SECRET", "string", cordova.getActivity().getPackageName()));
+
+        ConsentManager.getInstance(cordova.getContext())
+                .requestConsentInfoUpdate(APP_KEY, new ConsentInfoUpdateListener() {
+                    @Override
+                    public void onConsentInfoUpdated(Consent consent) {
+                        // User's consent status successfully updated.
+                        // Initialize the Appodeal SDK with the received Consent object here or show consent window.
+                    }
+
+                    @Override
+                    public void onFailedToUpdateConsentInfo(ConsentManagerException exception) {
+                        // User's consent status failed to update.
+                        int errorCode = exception.getCode();
+                        String reason = exception.getReason();
+                        // Initialize the Appodeal SDK with default params.
+                    }
+                });
+
     }
 
     /////////////////////////////////////////////////////////////////////////////
     @Override//funkcja która łączy się z JS
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
         if (action.equals("signInToGooglePlayGames")) {Log.d("log","***signInToGooglePlayGames");
-            signInToGooglePlayGames();
+//            signInToGooglePlayGames();
         }
         else if (action.equals("initialize")) {Log.d("log","***initialize");
             initialize();
-        }
-        else if (action.equals("showAchievements")) {Log.d("log","***showAchievements");
-            showAchievements();
-        } else if (action.equals("submitScoreForLeaderboards")) {Log.d("log","***submitScoreForLeaderboards");
-            submitScoreForLeaderboards(callbackContext, args);
-        } else if (action.equals("showLeaderboards")) {Log.d("log","***showLeaderboards");
-            showLeaderboards(callbackContext, args);
-        }else if (action.equals("unlockAchievements")) {Log.d("log","***unlockAchievements");
-            unlockAchievements(callbackContext,args);
         } else if (action.equals("showBanner")) {
-                  showBanner();
+            showBanner();
         }
+//        else if (action.equals("showAchievements")) {Log.d("log","***showAchievements");
+//            showAchievements();
+//        } else if (action.equals("submitScoreForLeaderboards")) {Log.d("log","***submitScoreForLeaderboards");
+//            submitScoreForLeaderboards(callbackContext, args);
+//        } else if (action.equals("showLeaderboards")) {Log.d("log","***showLeaderboards");
+//            showLeaderboards(callbackContext, args);
+//        }else if (action.equals("unlockAchievements")) {Log.d("log","***unlockAchievements");
+//            unlockAchievements(callbackContext,args);
+//        }
 
         return false;  // Returning false results in a "MethodNotFound" error.
     }
 
     private void initialize() {
-        signInToGooglePlayGames();
+        Appodeal.initialize(cordova.getActivity(), APP_KEY, Appodeal.INTERSTITIAL, consent);
     }
 
-    private void signInToGooglePlayGames() {
-        Log.w(TAG, "***signInToGooglePlayGames" );
-        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-        StrictMode.setThreadPolicy(policy);
-
-        Log.w(TAG, "*** MAIN initialize");
-
-        Scope birthdayScope = new Scope("https://www.googleapis.com/auth/user.birthday.read");
-        Scope profileScope = new Scope("https://www.googleapis.com/auth/userinfo.profile");
-
-        googleSignInOptions = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_GAMES_SIGN_IN)
-                .requestServerAuthCode(GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID)
-                .requestIdToken(GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID)
-                .requestScopes(birthdayScope,profileScope)
-                .build();
-
-        googleSignInClient = GoogleSignIn.getClient(cordova.getActivity(), googleSignInOptions);
-
-        Intent signInIntent = googleSignInClient.getSignInIntent();
-        cordova.setActivityResultCallback(this);
-        cordova.getActivity().startActivityForResult(signInIntent, RC_SIGN_IN);
+    public void showBanner(){
+        Appodeal.show(cordova.getActivity(), Appodeal.INTERSTITIAL);
     }
 
-    private void showLeaderboards(final CallbackContext callbackContext, final JSONArray data) throws JSONException{
-        if (googleSignInAccount == null){return ;}
-
-        String leaderboardiId = data.getString(0);
-        Log.w(TAG, "*** showLeaderboards: id: " + leaderboardiId);
-
-        Games.getLeaderboardsClient(cordova.getActivity(), GoogleSignIn.getLastSignedInAccount(cordova.getContext()))
-                .getLeaderboardIntent(leaderboardiId)
-                .addOnSuccessListener(new OnSuccessListener<Intent>() {
-                    @Override
-                    public void onSuccess(Intent intent) {
-                        cordova.getActivity().startActivityForResult(intent, 9004);
-                    }
-                });
-    }
-
-    private void showAchievements() {
-        if (googleSignInAccount == null){
-            return ;
-        }
-
-        mAchievementsClient.getAchievementsIntent()
-            .addOnSuccessListener(new OnSuccessListener<Intent>() {
-                @Override
-                public void onSuccess(Intent intent) {
-                    Log.w(TAG, "*** mAchievementsClient.getAchievementsIntent: "  );
-                    cordova.getActivity().startActivityForResult(intent, RC_ACHIEVEMENT_UI);
-                }
-            });
-    }
-
-    private void unlockAchievements(final CallbackContext callbackContext, final JSONArray data) throws JSONException{
-//        if (googleSignInAccount == null){
-//            Log.w(TAG, "*** account null ***" + googleSignInAccount);
-//            return;
-//        }
-
-        String id = data.getString(0);
-        String type = data.getString(1);
-        int incrementValue = Integer.parseInt(data.getString(2));
-
-        Log.w(TAG, "*** unlocked id: " + id);
-        Log.w(TAG, "*** unlocked type: " + type);
-        Log.w(TAG, "*** unlocked incrementValue: " + incrementValue);
-
-        // Type 1 -> Incremental
-        // Type 0 -> Standard
-
-        if (type.equals("0")) {
-            mAchievementsClient.unlock(id);
-            Log.w(TAG, "*** unlocked id: " + id);
-        } else if(type.equals("1")){
-            mAchievementsClient.increment(id, incrementValue);
-            Log.w(TAG, "*** unlocked id: " + id);
-        } else {
-            Log.w(TAG, "*** unlocked no type: " + type);
-            return;
-        }
-    }
-
-    private void submitScoreForLeaderboards(final CallbackContext callbackContext, final JSONArray data) throws JSONException {
-        if (googleSignInAccount == null){return ;}
-        String leaderboardID = data.getString(0);
-        Log.w(TAG, "*** submitScoreForLeaderboards: leaderboardID: "  + leaderboardID);
-
-        int points = data.getInt(1);
-        Log.w(TAG, "*** submitScoreForLeaderboards: points: " + points);
-
-        mLeaderboardsClient.submitScore(leaderboardID,points);
-    }
+//
 
     @Override
     public void onStart() {
         super.onStart();
-        googleSignInAccount = GoogleSignIn.getLastSignedInAccount(this.cordova.getActivity());
-        Log.w(TAG, "*** OnStart: " + googleSignInAccount);
+//        googleSignInAccount = GoogleSignIn.getLastSignedInAccount(this.cordova.getActivity());
+//        Log.w(TAG, "*** OnStart: " + googleSignInAccount);
         //updateUI(account);
     }
 
@@ -226,184 +115,17 @@ public class cordovaAppodeal extends CordovaPlugin  {
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        Log.w(TAG, "*** result requestCode: " + requestCode );
-        Log.w(TAG, "*** result resultCode: " + resultCode );
-        Log.w(TAG, "*** result data: " + data );
-
-        if (data != null)
-        {
-            if (requestCode == RC_SIGN_IN) {
-                GoogleSignInResult result = Auth.GoogleSignInApi.getSignInResultFromIntent(data);
-//                Auth.GoogleSignInApi.revokeAccess(Auth.GoogleSignInApi);
-
-                Log.w(TAG, "*** result: " + result );
-                Log.w(TAG, "*** result.isSuccess(): " + result.isSuccess() );
-
-                if (result.isSuccess()) {
-                    googleSignInAccount = result.getSignInAccount();
-                    serverAuthCode = googleSignInAccount.getServerAuthCode();
-
-                    Log.w(TAG, "*** profile getEmail: " + googleSignInAccount.getEmail());
-
-                    String redirectUrl = "urn:ietf:wg:oauth:2.0:oob";
-                    HttpTransport httpTransport = new NetHttpTransport();
-                    JacksonFactory jsonFactory = JacksonFactory.getDefaultInstance();
-
-                    Thread thread = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                GoogleTokenResponse tokenResponse = new GoogleAuthorizationCodeTokenRequest(
-                                        httpTransport,
-                                        jsonFactory,
-                                        GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID,
-                                        GOOGLE_GAMES_SERVICES_WEB_CLIENT_SECRET,
-                                        googleSignInAccount.getServerAuthCode(),
-                                        redirectUrl
-                                ).execute();
-
-                                Log.w(TAG, "*** GoogleTokenResponse GOOD: " + tokenResponse );
-
-                                GoogleCredential credential = new GoogleCredential.Builder()
-                                        .setClientSecrets(GOOGLE_GAMES_SERVICES_WEB_CLIENT_ID, GOOGLE_GAMES_SERVICES_WEB_CLIENT_SECRET)
-                                        .setTransport(httpTransport)
-                                        .setJsonFactory(jsonFactory)
-                                        .build();
-
-                                credential.setFromTokenResponse(tokenResponse);
-
-                                peopleService = new PeopleService.Builder(httpTransport, JSON_FACTORY, credential)
-                                        .setApplicationName(APPLICATION_NAME)
-                                        .build();
-
-                                Person profile = peopleService.people().get("people/me")
-                                        .setPersonFields("birthdays")
-                                        .execute();
-
-                                List<Birthday> birthdays = profile.getBirthdays();
-                                Log.w(TAG, "*** profile birthdays: " + birthdays );
-
-                                if (birthdays != null && birthdays.size() > 0) {
-
-                                    for (Birthday b : birthdays) {
-
-                                        Date bdate = b.getDate();
-
-                                        if (bdate != null) {
-                                            String bday, bmonth, byear;
-
-                                            if (bdate.getYear() == null) {
-                                                continue;
-                                            } else {
-                                                byear = bdate.getYear().toString();
-                                            }
-
-                                            if (bdate.getDay() != null)
-                                                bday = bdate.getDay().toString();
-                                            else bday = "";
-                                            if (bdate.getMonth() != null)
-                                                bmonth = bdate.getMonth().toString();
-                                            else bmonth = "";
-
-                                            Log.w(TAG, "*** profile.getBirthdays bday: " + bday);
-                                            Log.w(TAG, "*** profile.getBirthdays bmonth: " + bmonth);
-                                            Log.w(TAG, "*** profile.getBirthdays byear: " + byear);
-
-                                            goToUrl("javascript:cordova.fireDocumentEvent('onLoginSuccess', {'day': '" + bday + "', 'month': '" + bmonth + "', 'year': '" + byear + "'})");
-
-                                            Log.w(TAG, "*** MAIN initialize googleSignInAccount getServerAuthCode 2: " + serverAuthCode);
-                                            gamesClient = Games.getGamesClient(cordova.getContext(), googleSignInAccount);
-                                            gamesClient.setViewForPopups(webView.getView());
-                                            onConnected();
-
-                                        } else {
-                                            Log.w(TAG, "*** profile.getBirthdays bdate NULL: ");
-                                        }
-                                    }
-                                }
-                            } catch (IOException ex){
-                                Log.w(TAG, "*** GoogleTokenResponse ERR ex: " + ex.getMessage() );
-                            }
-                        }
-                    });
-
-                    thread.start();
-                } else {
-
-                    goToUrl("javascript:cordova.fireDocumentEvent('onLoginFailed', {'a': 'a'})");
-
-                    String message = result.getStatus().getStatusMessage();
-                    if (message == null || message.isEmpty()) {
-                        Log.w(TAG, "*** SIGN IN FAILED: result.getStatus().getStatusMessage(): " + result.getStatus().getStatusMessage());
-                        Log.w(TAG, "*** SIGN IN FAILED result.getStatus(): " + result.getStatus());
-                        Log.w(TAG, "*** SIGN IN FAILED: " + message);
-                    }
-                }
-            }
-        }
     }
 
-    private void signInSilently() {
-        Log.d(TAG, "*** signInSilently()");
-        googleSignInClient.silentSignIn().addOnCompleteListener(cordova.getActivity(),
-                new OnCompleteListener<GoogleSignInAccount>() {
-                    @Override
-                    public void onComplete(@NonNull Task<GoogleSignInAccount> task) {
-                        if (task.isSuccessful()) {
-                            Log.d(TAG, "*** signInSilently(): success");
-                            googleSignInAccount = task.getResult();
-                            gamesClient = Games.getGamesClient(cordova.getContext(), googleSignInAccount);
-                            gamesClient.setViewForPopups(webView.getView());
-                            onConnected();
-                        } else {
-                            Log.d(TAG, "*** signInSilently(): failure", task.getException());
-                            onDisconnected();
-                        }
-                    }
-                });
-    }
-
-    private void onConnected() {
-        Log.d(TAG, "***onConnected(): connected to Google APIs");
-        mAchievementsClient = Games.getAchievementsClient(cordova.getContext(), googleSignInAccount);
-        Log.d(TAG, "***onConnected(): mAchievementsClient: " + mAchievementsClient);
-        mLeaderboardsClient = Games.getLeaderboardsClient(cordova.getContext(), googleSignInAccount);
-        Log.d(TAG, "***onConnected(): mLeaderboardsClient" + mLeaderboardsClient);
-        mEventsClient = Games.getEventsClient(cordova.getContext(), googleSignInAccount);
-        Log.d(TAG, "***onConnected(): mEventsClient" + mEventsClient);
-        mPlayersClient = Games.getPlayersClient(cordova.getContext(), googleSignInAccount);
-        Log.d(TAG, "***onConnected(): mPlayersClient" + mPlayersClient);
-    }
-
-    private void signOut() {
-        Log.d(TAG, "signOut()");
-
-        if (!isSignedIn()) {
-            Log.w(TAG, "signOut() called, but was not signed in!");
-            return;
-        }
-
-        googleSignInClient.signOut().addOnCompleteListener(cordova.getActivity(),
-                new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        boolean successful = task.isSuccessful();
-                        Log.d(TAG, "signOut(): " + (successful ? "success" : "failed"));
-
-                        onDisconnected();
-                    }
-                });
-    }
 
     private void onDisconnected() {
         Log.d(TAG, "onDisconnected()");
-        mAchievementsClient = null;
-        mLeaderboardsClient = null;
-        mPlayersClient = null;
     }
-    private boolean isSignedIn() {
-        return googleSignInAccount != null;
-    }
+//    private boolean isSignedIn() {
+//
+//        return googleSignInAccount != null;
+//
+//    }
 
     @Override
     public void onResume(boolean multitasking) {
