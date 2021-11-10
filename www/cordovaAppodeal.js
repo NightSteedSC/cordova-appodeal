@@ -3,6 +3,11 @@
     exports.initialize = function (success, error) {
         exec(success, error, 'cordovaAppodeal','initialize');
     };
+
+    exports.showBanner = function (success, error) {
+        exec(success, error, 'cordovaAppodeal','showBanner');
+    };
+
     exports.signInToGooglePlayGames = function (success, error) {
         exec(success, error, 'cordovaAppodeal','signInToGooglePlayGames');
     };

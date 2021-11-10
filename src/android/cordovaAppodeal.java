@@ -109,7 +109,10 @@ public class cordovaAppodeal extends CordovaPlugin  {
             showLeaderboards(callbackContext, args);
         }else if (action.equals("unlockAchievements")) {Log.d("log","***unlockAchievements");
             unlockAchievements(callbackContext,args);
+        } else if (action.equals("showBanner")) {
+                  showBanner();
         }
+
         return false;  // Returning false results in a "MethodNotFound" error.
     }
 
